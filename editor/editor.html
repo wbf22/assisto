@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Basic AI Chat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            height: 100vh;
+            background-color: #343434;
+
+            display: grid;
+            grid-template-columns: .3fr 1fr;
+        }
+
+        #chat_container {
+            height: 100vh;
+            display: grid;
+            grid-template-rows: 1fr .2fr;
+        }
+
+        #conversation {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            overflow-y: auto;
+
+        }
+
+        .message {
+            margin: 5px 0;
+            padding: 8px 12px;
+            border-radius: 8px;
+            max-width: 70%;
+        }
+
+        .user {
+            align-self: flex-end;
+            background-color: #007bff;
+            color: #fff;
+        }
+
+        .assistant {
+            align-self: flex-start;
+            background-color: #e2e2e2;
+        }
+
+        #inputForm {
+            display: flex;
+            padding: 10px;
+            margin: 1rem;
+            border-radius: 10px;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
+
+        }
+
+        #promptInput {
+            /* flex: 1;
+            padding: 10px;
+            font-size: 1em;
+            border: 1px solid #ccc;
+            border-radius: 4px; */
+
+            width: 300px;             /* same as input width */
+            height: auto;             /* or fix height if you want */
+            min-height: 40px;        /* optional: minimum height */
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            resize: vertical;        /* allow vertical resizing or none */
+            overflow: auto;          /* scrollbars when needed */
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+            font-size: 14px;
+            line-height: 1.4;        /* for better wrapping */
+            resize: none;
+            
+            color: #f2f2f2;
+            background-color: #343434;
+        }
+
+        #sendButton {
+            padding: 10px 20px;
+            margin-left: 10px;
+            font-size: 1em;
+            border: none;
+            border-radius: 4px;
+            background-color: #007bff;
+            color: #fff;
+            cursor: pointer;
+        }
+
+        #sendButton:hover {
+            background-color: #0069d9;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="chat_container">
+        <div id="conversation"></div>
+        <form id="inputForm">
+            <textarea id="promptInput" rows="1" placeholder="Type your message..."></textarea>
+            <!-- <input type="text" id="promptInput" placeholder="Type your message..." required /> -->
+            <button type="submit" id="sendButton">Send</button>
+        </form>
+    </div>
+    <iframe id="display_frame" width="100%" height="100%"></iframe>
+
+
+    <script>
+
+        let chat_instructions = `
+
+            Hello, we're talking to you from a website generator. The user prompt and the code for the files 
+            you're currently working on will be provided to you in the following codeblocks:
+            - index.html (the main html page. Most visual changes should go in this file)
+            - server.py (a python FastAPI server. Only put python fastapi code here)
+
+            In your response please return the complete codeblocks for any files you are changing, labeled with the correct name.
+            These codeblocks will be used to replace the contents of the user's files. 
+            
+            You do not need to return a codeblock for every file, just the ones you intend to change. If you don't have
+            changes for a file then don't return a corresponding codeblock. If the user doesn't ask for changes,
+            don't return any codeblocks.
+
+            Make sure you return the entire file in your response. If html is missing but you just return the style section of a file
+            for example, the user will have errors.
+
+            At the end of your response include a message briefly telling the user what you did.
+
+        `;
+
+        let starter_html = `
+            
+            <style>
+                body {
+                    margin: 0;
+                    font-family: Arial, sans-serif;
+                    line-height: 1.6;
+                    color: #333;
+                    background-color: #ffffff;
+                    
+                }
+
+                header {
+                    background-color: #007BFF;
+                    color: #fff;
+                    padding: 20px 0;
+                    text-align: center;
+                }
+
+                header h1 {
+                margin: 0;
+                }
+
+                nav {
+                margin-top: 10px;
+                }
+
+                nav a {
+                color: #fff;
+                text-decoration: none;
+                margin: 0 15px;
+                font-weight: bold;
+                }
+
+                nav a:hover {
+                text-decoration: underline;
+                }
+
+                section {
+                padding: 40px 20px;
+                max-width: 1000px;
+                margin: 0 auto;
+                }
+
+                section:nth-of-type(even) {
+                background-color: #f4f4f4;
+                }
+
+                h2 {
+                margin-top: 0;
+                }
+
+                footer {
+                background-color: #333;
+                color: #fff;
+                text-align: center;
+                padding: 15px 0;
+                margin-top: 40px;
+                }
+
+                /* Basic responsive */
+                @media(max-width: 600px) {
+                nav a {
+                    display: block;
+                    margin: 10px 0;
+                }
+                }
+            </style>
+        
+            <header>
+                <h1>My Business</h1>
+                <nav>
+                <a href="#about">About</a>
+                <a href="#services">Services</a>
+                <a href="#contact">Contact</a>
+                </nav>
+            </header>
+
+            <section id="about">
+                <h2>About Us</h2>
+                <p>We are a leading company providing top-quality services to our clients. Our mission is to deliver excellence and exceed expectations.</p>
+            </section>
+
+            <section id="services">
+                <h2>Our Services</h2>
+                <ul>
+                <li>Consulting</li>
+                <li>Market Analysis</li>
+                <li>Product Development</li>
+                <li>Customer Support</li>
+                </ul>
+            </section>
+
+            <section id="contact">
+                <h2>Contact Us</h2>
+                <p>Email: info@mybusiness.com</p>
+                <p>Phone: (123) 456-7890</p>
+                <p>Address: 123 Main St, Business City</p>
+            </section>
+
+            <footer>
+                &copy; 2024 My Business. All rights reserved.
+            </footer>
+        `;
+    </script>
+
+    <!-- displaying user page -->
+    <script>
+
+        function set_display(inner_html) {
+            const iframe = document.getElementById('display_frame');
+            const blob = new Blob([inner_html], {type: 'text/html'});
+            const url = URL.createObjectURL(blob);
+            iframe.src = url;
+        }
+
+    </script>
+
+    <!-- chat gpt interfacing -->
+    <script>
+        let history = [];
+        let file_history = [
+            new Map([
+                ['index.html', starter_html],
+                ['server.py', '']
+            ])
+        ];
+        let undone_history = []
+        let ASSISTANT = 'assistant';
+        let USER = 'user';
+        let API_KEY = '';
+        let MODEL = 'gpt-4.1-nano';
+
+
+        const conversation = document.getElementById('conversation');
+        const inputForm = document.getElementById('inputForm');
+        const promptInput = document.getElementById('promptInput');
+
+        function appendMessage(text, sender) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message ' + sender;
+            messageDiv.textContent = text;
+            conversation.appendChild(messageDiv);
+            // Scroll to bottom
+            conversation.scrollTop = conversation.scrollHeight;
+        }
+
+        function apply_chats_response(ai_response) {
+
+            // parse out codeblocks
+            let user_message = []
+            let new_files = new Map();
+            let code_block_start = ai_response.indexOf("```", 0);
+            let last = 0;
+            while(code_block_start != -1) {
+                user_message.push(ai_response.substring(last, code_block_start));
+                code_block_start += 3;
+                let block_name_end = ai_response.indexOf("\n", code_block_start);
+                let block_name = ai_response.substring(code_block_start, block_name_end);
+
+
+                let code_block_end = ai_response.indexOf("```", block_name_end);
+
+                let code_block = ai_response.substring(block_name_end, code_block_end);
+                new_files.set(block_name, code_block)
+                
+                code_block_start = ai_response.indexOf("```", code_block_end + 3);
+                last = code_block_end + 3;       
+            }
+            user_message.push(ai_response.substring(last, ai_response.length));
+            
+            // add new files to undo stack
+            let current_files = file_history[file_history.length-1];
+            for (const [key, value] of current_files) {
+                if (!new_files.has(key)) {
+                    new_files.set(key, value);
+                }
+            }
+            file_history.push(new_files);
+
+            // limit undo stack size
+            if (file_history.length > 20) {
+                file_history = file_history.slice(file_history.length - 20);
+            }
+
+
+            // set display
+            set_display(new_files.get("index.html"))
+            
+
+            // return non code block sections
+            return user_message.join("\n");
+        }
+        
+        function getAIResponse(userMessage) {
+            
+            const body = {
+                "model": MODEL,
+                "messages": history
+            };
+
+            fetch('https://api.openai.com/v1/chat/completions', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': 'Bearer ' + API_KEY,
+                },
+                body: JSON.stringify(body),
+            })
+            .then(async response => {
+                let completion = await response.json()
+                let ai_response = completion.choices[0].message.content;
+                console.log(ai_response);
+                let to_user_message = apply_chats_response(ai_response);
+
+                appendMessage(to_user_message, ASSISTANT);
+                history.push({
+                    "role": ASSISTANT,
+                    "content": to_user_message
+                });
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+
+        inputForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const userMessage = promptInput.value.trim();
+            if (userMessage === "") return;
+
+            let current_files = file_history[file_history.length-1];
+            let message = chat_instructions + "```index.html\n" + current_files.get("index.html") + "\n```\n\n"
+                + "```server.py\n" + current_files.get("server.py") + "\n```\n\n" + "USER PROMPT:\n\n" + userMessage;
+            
+            console.log(message);
+            history.push({
+                "role": USER,
+                "content": message
+            });
+
+            // Append user's message
+            appendMessage(userMessage, USER);
+
+            // Clear input
+            promptInput.value = '';
+
+            // Get AI response (simulate)
+            const aiResponse = getAIResponse(userMessage);
+        });
+
+        document.addEventListener('DOMContentLoaded', () => {
+            set_display(starter_html)
+        });
+
+    </script>
+</body>
+</html>

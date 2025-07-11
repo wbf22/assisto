@@ -1,0 +1,12 @@
+{
+    "tasks": [
+        
+        {
+            "label": "bear_make",
+            "type": "shell",
+            "command": "python3 ./editor/bear_make.py ./editor/make",
+            "problemMatcher": [],
+            "group": "build"
+        }
+    ]
+}

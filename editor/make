@@ -1,0 +1,4 @@
+
+EXECUTABLE_NAME='assisto'
+
+FILE='./editor/runner.c'
