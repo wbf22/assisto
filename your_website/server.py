@@ -3,7 +3,9 @@ import asyncio
 from contextlib import asynccontextmanager
 import os
 import signal
+import webbrowser
 from fastapi import FastAPI
+from fastapi.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 import uvicorn
 
@@ -27,8 +29,17 @@ async def monitor_parent(app: FastAPI):
 
 app = FastAPI(lifespan=monitor_parent)
 
+@app.get("/assisto_edit")
+async def download_file():
+    file_path = "../editor/editor.html"
+    return FileResponse(file_path)
+
 app.mount("/", StaticFiles(directory="."), name="static")
 
 
 if __name__ == "__main__":
+    url = 'http://127.0.0.1:8000/assisto_edit'
+    webbrowser.open(url)
+
     uvicorn.run(app, host="127.0.0.1", port=8000)
+    

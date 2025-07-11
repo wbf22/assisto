@@ -11,11 +11,18 @@ as a published website, or in edit mode.
 # Deploying
 You can deploy as a published website by copying these files to your server:
 
+```
 editor
   |__ ...
 your_website
   |__ ...
 assisto
+```
 
 
 And then run the executable ('assisto') and selecting to run as a published website. Your website will then be running on port you select.
+
+
+# Support Me
+If you'd like to support me I'll have my github sponsers page set up soon. 
+Don't feel like you have to though, the software is free!
