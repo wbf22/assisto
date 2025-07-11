@@ -134,134 +134,26 @@
 
         `;
 
-        let starter_html = `
-            
-            <style>
-                body {
-                    margin: 0;
-                    font-family: Arial, sans-serif;
-                    line-height: 1.6;
-                    color: #333;
-                    background-color: #ffffff;
-                    
-                }
-
-                header {
-                    background-color: #007BFF;
-                    color: #fff;
-                    padding: 20px 0;
-                    text-align: center;
-                }
-
-                header h1 {
-                margin: 0;
-                }
-
-                nav {
-                margin-top: 10px;
-                }
-
-                nav a {
-                color: #fff;
-                text-decoration: none;
-                margin: 0 15px;
-                font-weight: bold;
-                }
-
-                nav a:hover {
-                text-decoration: underline;
-                }
-
-                section {
-                padding: 40px 20px;
-                max-width: 1000px;
-                margin: 0 auto;
-                }
-
-                section:nth-of-type(even) {
-                background-color: #f4f4f4;
-                }
-
-                h2 {
-                margin-top: 0;
-                }
-
-                footer {
-                background-color: #333;
-                color: #fff;
-                text-align: center;
-                padding: 15px 0;
-                margin-top: 40px;
-                }
-
-                /* Basic responsive */
-                @media(max-width: 600px) {
-                nav a {
-                    display: block;
-                    margin: 10px 0;
-                }
-                }
-            </style>
-        
-            <header>
-                <h1>My Business</h1>
-                <nav>
-                <a href="#about">About</a>
-                <a href="#services">Services</a>
-                <a href="#contact">Contact</a>
-                </nav>
-            </header>
-
-            <section id="about">
-                <h2>About Us</h2>
-                <p>We are a leading company providing top-quality services to our clients. Our mission is to deliver excellence and exceed expectations.</p>
-            </section>
-
-            <section id="services">
-                <h2>Our Services</h2>
-                <ul>
-                <li>Consulting</li>
-                <li>Market Analysis</li>
-                <li>Product Development</li>
-                <li>Customer Support</li>
-                </ul>
-            </section>
-
-            <section id="contact">
-                <h2>Contact Us</h2>
-                <p>Email: info@mybusiness.com</p>
-                <p>Phone: (123) 456-7890</p>
-                <p>Address: 123 Main St, Business City</p>
-            </section>
-
-            <footer>
-                &copy; 2024 My Business. All rights reserved.
-            </footer>
-        `;
     </script>
 
     <!-- displaying user page -->
     <script>
 
-        function set_display(inner_html) {
+        function set_display(file) {
+
+            const src_url = window.location.origin + "/" + file;
+            console.log("src_url", src_url);
             const iframe = document.getElementById('display_frame');
-            const blob = new Blob([inner_html], {type: 'text/html'});
-            const url = URL.createObjectURL(blob);
-            iframe.src = url;
+            iframe.src = src_url;
         }
 
     </script>
 
     <!-- chat gpt interfacing -->
     <script>
-        let history = [];
-        let file_history = [
-            new Map([
-                ['index.html', starter_html],
-                ['server.py', '']
-            ])
-        ];
-        let undone_history = []
+        let file_history = [];
+        let undone_history = [];
+        let display_file_url = "index.html";
         let ASSISTANT = 'assistant';
         let USER = 'user';
         let API_KEY = '';
@@ -319,10 +211,22 @@
                 file_history = file_history.slice(file_history.length - 20);
             }
 
-
-            // set display
-            set_display(new_files.get("index.html"))
-            
+            // send file updates to file server
+            const obj = Object.fromEntries(new_files);
+            const json_body = JSON.stringify(obj)
+            fetch('/update_files', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: json_body
+            })
+            .then(response => {
+                window.location.reload();
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
 
             // return non code block sections
             return user_message.join("\n");
@@ -330,6 +234,8 @@
         
         function getAIResponse(userMessage) {
             
+            let history = localStorage.getItem('history');
+            history = history ? JSON.parse(history) : [];
             const body = {
                 "model": MODEL,
                 "messages": history
@@ -350,14 +256,26 @@
                 let to_user_message = apply_chats_response(ai_response);
 
                 appendMessage(to_user_message, ASSISTANT);
-                history.push({
-                    "role": ASSISTANT,
-                    "content": to_user_message
-                });
+                add_message_to_history(ai_response, to_user_message, ASSISTANT);
             })
             .catch(error => {
                 console.error('Error:', error);
             });
+        }
+
+        function add_message_to_history(message, user_friendly_message, role) {
+
+            let history = localStorage.getItem('history');
+            history = history ? JSON.parse(history) : [];
+            history.push({
+                "role": role,
+                "content": message,
+                "user_friendly": user_friendly_message
+            });
+            if (history.length > 10) {
+                history = history.slice(history.length-10);
+            }
+            localStorage.setItem('history', JSON.stringify(history));
         }
 
         inputForm.addEventListener('submit', async (e) => {
@@ -365,17 +283,21 @@
             const userMessage = promptInput.value.trim();
             if (userMessage === "") return;
 
+            let message_parts = [chat_instructions];
             let current_files = file_history[file_history.length-1];
-            let message = chat_instructions + "```index.html\n" + current_files.get("index.html") + "\n```\n\n"
-                + "```server.py\n" + current_files.get("server.py") + "\n```\n\n" + "USER PROMPT:\n\n" + userMessage;
+            for (const [file_name, contents] of current_files) {
+                message_parts.push("```" + file_name + "\n");
+                message_parts.push(contents);
+                message_parts.push("\n```\n\n");
+            }
+            message_parts.push("USER PROMPT:\n\n");
+            message_parts.push(userMessage);
             
+            const message = message_parts.join("");
             console.log(message);
-            history.push({
-                "role": USER,
-                "content": message
-            });
 
             // Append user's message
+            add_message_to_history(message, userMessage, USER);
             appendMessage(userMessage, USER);
 
             // Clear input
@@ -386,7 +308,27 @@
         });
 
         document.addEventListener('DOMContentLoaded', () => {
-            set_display(starter_html)
+            fetch('/get_files')
+            .then(response => response.json())  // parse JSON response
+            .then(data => {
+                let current_files = new Map(Object.entries(data));
+                console.log("current_files", current_files);
+                file_history.push(current_files);
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+
+            set_display(display_file_url);
+
+
+            // load previous messages
+            let history = localStorage.getItem('history');
+            history = history ? JSON.parse(history) : [];
+            console.log("history", history);
+            for (message of history) {
+                appendMessage(message.user_friendly, message.role);
+            }
         });
 
     </script>

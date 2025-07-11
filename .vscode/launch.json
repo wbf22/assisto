@@ -14,14 +14,12 @@
             "preLaunchTask": "bear_make"
         },
         {
-            "name": "Bear Make",
+            "name": "Server",
             "type": "debugpy",
             "request": "launch",
-            "program": "bear_make.py",
+            "program": "${workspaceFolder}/your_website/server.py",
             "console": "integratedTerminal",
-            "args": [
-                "./editor/make"
-            ]
+            "cwd": "${workspaceFolder}/your_website"
         }
     ]
 }

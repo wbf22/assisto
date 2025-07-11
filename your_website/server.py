@@ -4,10 +4,14 @@ from contextlib import asynccontextmanager
 import os
 import signal
 import webbrowser
-from fastapi import FastAPI
+from fastapi import FastAPI, Response
 from fastapi.responses import FileResponse
 from starlette.staticfiles import StaticFiles
 import uvicorn
+
+
+file_history = []
+undone_history = []
 
 
 # shut down when parent is killed
@@ -34,7 +38,33 @@ async def download_file():
     file_path = "../editor/editor.html"
     return FileResponse(file_path)
 
+@app.post("/update_files")
+async def update_files(files: dict):
+    file_history.append(files)
+
+    # update files
+    for [file_path, contents] in files.items():
+        with open(file_path, 'w') as file:
+            file.write(contents)
+
+    return Response(status_code=204)
+    
+
+@app.get("/get_files")
+async def get_files():
+    files = {}
+    for filename in os.listdir("."):
+        file_path = os.path.join(".", filename)
+        if filename != 'server.py' and os.path.isfile(file_path):
+            with open(file_path, 'r') as file:
+                contents = file.read()
+                files[filename] = contents
+
+    return files
+
 app.mount("/", StaticFiles(directory="."), name="static")
+
+
 
 
 if __name__ == "__main__":
