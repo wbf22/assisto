@@ -62,7 +62,17 @@ async def get_files():
 
     return files
 
-app.mount("/", StaticFiles(directory="."), name="static")
+
+class NoCacheStaticFiles(StaticFiles):
+    async def get_response(self, path, scope):
+        response = await super().get_response(path, scope)
+        # Set headers to disable caching
+        response.headers['Cache-Control'] = 'no-cache, no-store, must-revalidate'
+        response.headers['Pragma'] = 'no-cache'
+        response.headers['Expires'] = '0'
+        return response
+    
+app.mount("/", NoCacheStaticFiles(directory="."), name="static")
 
 
 

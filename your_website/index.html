@@ -7,104 +7,77 @@
     <title>My Site</title>
     <!-- Include Google Fonts for Roboto -->
     <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
-</head>
-<body>
-
     <style>
         body {
             margin: 0;
-            /* Changed font-family to 'Roboto', fallback to Arial and sans-serif */
             font-family: 'Roboto', Arial, sans-serif;
             line-height: 1.6;
             color: #fff;
             background-color: #2c003e; /* Dark Blue/Purple background */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
         }
-
         header {
-            background-color: #4b0082; /* Indigo / Deep purple header */
+            background-color: #4b0082;
             color: #fff;
             padding: 20px 0;
             text-align: center;
         }
-
         header h1 {
             margin: 0;
         }
-
-        nav {
-            margin-top: 10px;
+        /* Navigation styles */
+        .nav {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            padding: 10px 0;
         }
-
-        nav a {
+        a.page-link {
             color: #fff;
             text-decoration: none;
-            margin: 0 15px;
-            font-weight: bold;
+            background-color: #9933ff; /* Matching vibe with space theme */
+            padding: 8px 16px;
+            border-radius: 5px;
+            font-family: 'Roboto', sans-serif;
+            transition: background-color 0.3s, box-shadow 0.3s, transform 0.2s;
         }
-
-        nav a:hover {
-            text-decoration: underline;
+        a.page-link:hover {
+            background-color: #ff66ff;
+            box-shadow: 0 0 10px #ff66ff;
+            transform: scale(1.05);
         }
-
-        section {
-            padding: 40px 20px;
-            max-width: 1000px;
-            margin: 0 auto;
+        /* Content container styling */
+        .page-content {
+            flex: 1;
+            display: flex;
+            justify-content: center;
+            align-items: start;
+            padding: 20px;
         }
-
-        section:nth-of-type(even) {
-            background-color: #3e006e; /* Darker purple for alternate sections */
-        }
-
-        h2 {
-            margin-top: 0;
-        }
-
-        footer {
-            background-color: #1a001a; /* Deep purple footer */
-            color: #fff;
-            text-align: center;
-            padding: 15px 0;
-            margin-top: 40px;
-        }
-
-        /* Basic responsive */
-        @media(max-width: 600px) {
-            nav a {
-                display: block;
-                margin: 10px 0;
+        /* Adjust for mobile */
+        @media(max-width: 600px){
+            a.page-link {
+                padding: 6px 12px;
+                font-size: 0.9em;
             }
         }
     </style>
-
+</head>
+<body>
     <header>
         <h1>My Business</h1>
-        <nav>
-            <a href="#about">About</a>
-            <a href="#services">Services</a>
-            <a href="#contact">Contact</a>
-        </nav>
+        <div class="nav">
+            <a href="index.html" class="page-link">Home</a>
+            <a href="space.html" class="page-link">Space</a>
+        </div>
     </header>
-
-    <section id="about">
-        <h2>About Us</h2>
-        <p>We are a leading company providing top-quality services to our clients. Our mission is to deliver excellence and exceed expectations.</p>
-    </section>
-
-    <section id="services">
-        <h2>Our Services</h2>
-        <p>Brandon is cool</p>
-    </section>
-
-    <section id="contact">
-        <h2>Contact Us</h2>
-        <p>Email: info@mybusiness.com</p>
-        <p>Phone: (123) 456-7890</p>
-        <p>Address: 123 Main St, Business City</p>
-    </section>
-
-    <footer>
-        &copy; 2024 My Business. All rights reserved.
-    </footer>
+    <div class="page-content">
+        <div>
+            <h2>Welcome</h2>
+            <p>This is the main page. Use the navigation links to explore different pages.</p>
+        </div>
+    </div>
 </body>
 </html>

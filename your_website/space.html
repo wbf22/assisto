@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Space Page</title>
+    <!-- Include Google Fonts for Roboto -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto&display=swap" rel="stylesheet" />
+    <style>
+        body {
+            margin: 0;
+            font-family: 'Roboto', Arial, sans-serif;
+            line-height: 1.6;
+            color: #fff;
+            background-color: #000; /* Pure black for a space-like background */
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+        header {
+            background-color: #0a0a0a; /* Deeper black for a more cosmic feel */
+            color: #fff;
+            padding: 20px 0;
+            text-align: center;
+            box-shadow: 0 0 15px rgba(255, 255, 255, 0.5);
+        }
+        header h1 {
+            margin: 0;
+            font-family: 'Roboto', sans-serif;
+            font-size: 2em;
+            color: #a0c0ff; /* Soft cosmic blue for titles */
+            text-shadow: 0 0 15px #a0c0ff;
+        }
+        /* Navigation styles */
+        .nav {
+            display: flex;
+            gap: 20px;
+            justify-content: center;
+            padding: 10px 0;
+        }
+        a.page-link {
+            color: #fff;
+            text-decoration: none;
+            background-color: #4b6aff; /* Space blue-violet */
+            padding: 8px 16px;
+            border-radius: 5px;
+            transition: background-color 0.3s, box-shadow 0.3s, transform 0.2s;
+        }
+        a.page-link:hover {
+            background-color: #8daaff; /* Lighter cosmic hue on hover */
+            box-shadow: 0 0 15px #8daaff;
+            transform: scale(1.05);
+        }
+        /* Content container */
+        .content {
+            flex: 1;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            color: #cdeaff;
+            font-family: 'Roboto', sans-serif;
+            text-align: center;
+        }
+        h2 {
+            margin-top: 0;
+            font-family: 'Roboto', sans-serif;
+            font-size: 2em;
+            color: #a0c0ff;
+            text-shadow: 0 0 15px #a0c0ff;
+        }
+        p {
+            margin-top: 20px;
+            font-size: 1.2em;
+        }
+        /* Subtle starfield overlay for a more space-like vibe */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0; left: 0;
+            width: 100%; height: 100%;
+            background-image: radial-gradient(#ffffff 1px, transparent 1px);
+            background-size: 60px 60px;
+            opacity: 0.2;
+            z-index: -1;
+        }
+        @media(max-width: 600px){
+            a.page-link {
+                padding: 6px 12px;
+                font-size: 0.9em;
+            }
+            h2 {
+                font-size: 1.5em;
+            }
+            p {
+                font-size: 1em;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Space Exploration</h1>
+        <div class="nav">
+            <a href="index.html" class="page-link">Home</a>
+        </div>
+    </header>
+    <div class="content">
+        <h2>Welcome to Space!</h2>
+        <p>Explore the wonders of the universe, learn about planets, stars, galaxies, and marvel at the cosmos.</p>
+        <p>Stay tuned for fascinating facts and images about our universe.</p>
+    </div>
+</body>
+</html>

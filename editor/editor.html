@@ -12,7 +12,7 @@
             background-color: #343434;
 
             display: grid;
-            grid-template-columns: .3fr 1fr;
+            grid-template-columns: .3fr .15fr 1fr;
         }
 
         #chat_container {
@@ -45,7 +45,7 @@
 
         .assistant {
             align-self: flex-start;
-            background-color: #e2e2e2;
+            background-color: #ffffff;
         }
 
         #input_section {
@@ -119,12 +119,58 @@
             background-color: #f9f9f9;
             color: #343434;
         }
+
+        #file_explorer {
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+
+            color: #eeeeee;
+        }
+
+        .file_tile{
+            display: grid;
+            grid-template-columns: .2fr 1fr .2fr;
+            box-shadow: 4px 4px 10px rgba(0, 0, 0, 0.3);
+            justify-items: center;
+            align-items: center;
+            font-size: .9rem;
+            margin: .7rem;
+            padding-right: .5rem;
+            padding-left: .5rem;
+        }
+
+        .file_tile:hover {
+            cursor: pointer;
+            transform: scale(1.05);
+        }
+        
+        #spinner_container {
+            display: none;
+            justify-content: center;
+            align-items: center;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        #spinner {
+            animation: rotate 4s linear infinite;
+            /* color:#ffb341 */
+        }
     </style>
 </head>
 <body>
 
     <div id="chat_container">
         <div id="conversation"></div>
+        <div id="spinner_container">
+            <svg id="spinner" xmlns="http://www.w3.org/2000/svg" width="2rem" height="2rem" fill="#ffb341" class="bi bi-slash-circle" viewBox="0 0 16 16">
+                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14m0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16"/>
+                <path d="M11.354 4.646a.5.5 0 0 0-.708 0l-6 6a.5.5 0 0 0 .708.708l6-6a.5.5 0 0 0 0-.708"/>
+            </svg>
+        </div>
         <form id="input_section">
             <div id="menu_buttons">
                 <svg xmlns="http://www.w3.org/2000/svg" width="1.5rem" height="1.5rem" fill="#fff" class="bi bi-arrow-counterclockwise" viewBox="0 0 16 16">
@@ -150,6 +196,7 @@
             </div>
         </form>
     </div>
+    <div id="file_explorer"></div>
     <iframe id="display_frame" width="100%" height="100%"></iframe>
 
 
@@ -158,9 +205,7 @@
         let chat_instructions = `
 
             Hello, we're talking to you from a website generator. The user prompt and the code for the files 
-            you're currently working on will be provided to you in the following codeblocks:
-            - index.html (the main html page. Most visual changes should go in this file)
-            - server.py (a python FastAPI server. Only put python fastapi code here)
+            you're currently working on will be provided to you in codeblocks with the name of the file.
 
             In your response please return the complete codeblocks for any files you are changing, labeled with the correct name.
             These codeblocks will be used to replace the contents of the user's files. 
@@ -189,13 +234,103 @@
             iframe.src = src_url;
         }
 
+        function toggle_file_hidden(file_name) {
+            let hidden_files = localStorage.getItem('hidden_files');
+            hidden_files = hidden_files ? new Set(JSON.parse(hidden_files)) : new Set();
+            if (hidden_files.has(file_name)) {
+                hidden_files.delete(file_name);
+            }
+            else {
+                hidden_files.add(file_name);
+            }
+            localStorage.setItem('hidden_files', JSON.stringify(Array.from(hidden_files)));
+        }
+
+        function is_file_hidden(file_name) {
+            let hidden_files = localStorage.getItem('hidden_files');
+            hidden_files = hidden_files ? new Set(JSON.parse(hidden_files)) : new Set();
+            return hidden_files.has(file_name);
+        }
+
+        function eye_clicked(element) {
+            const parent = element.parentElement;
+            const vis_svg = parent.querySelector('.visible');
+            const hide_svg = parent.querySelector('.not_visible');
+            if (element == hide_svg) {
+                vis_svg.style.display = 'block';
+                hide_svg.style.display = 'none';
+            }
+            else {
+                hide_svg.style.display = 'block';
+                vis_svg.style.display = 'none';
+            }
+
+            let file_name_div = parent.querySelector('.file_name_div');
+            toggle_file_hidden(file_name_div.textContent);
+
+
+        } 
+
+        function change_page(element) {
+            const file_name = element.textContent;
+            set_display(file_name);
+            localStorage.setItem('display_file_url', file_name);
+        }
+
+        function set_files_in_sidebar() {
+
+            // set files in sidebar
+            const files_tiles = document.getElementById("file_explorer");
+            let current_files = file_history[file_history.length-1];
+            for (const [file_name, contents] of current_files) {
+                let file_tile = document.createElement('div');
+                file_tile.className = 'file_tile';
+                file_tile.innerHTML = `
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-x-lg" viewBox="0 0 16 16">
+                        <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8z"/>
+                    </svg>
+                    <p onclick='change_page(this)' class='file_name_div'>${file_name}</p>
+                    <svg class='visible' onclick='eye_clicked(this)' xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye" viewBox="0 0 16 16">
+                        <path d="M16 8s-3-5.5-8-5.5S0 8 0 8s3 5.5 8 5.5S16 8 16 8M1.173 8a13 13 0 0 1 1.66-2.043C4.12 4.668 5.88 3.5 8 3.5s3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755C11.879 11.332 10.119 12.5 8 12.5s-3.879-1.168-5.168-2.457A13 13 0 0 1 1.172 8z"/>
+                        <path d="M8 5.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5M4.5 8a3.5 3.5 0 1 1 7 0 3.5 3.5 0 0 1-7 0"/>
+                    </svg>
+                    <svg class='not_visible' onclick='eye_clicked(this)' xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" class="bi bi-eye-slash" viewBox="0 0 16 16">
+                        <path d="M13.359 11.238C15.06 9.72 16 8 16 8s-3-5.5-8-5.5a7 7 0 0 0-2.79.588l.77.771A6 6 0 0 1 8 3.5c2.12 0 3.879 1.168 5.168 2.457A13 13 0 0 1 14.828 8q-.086.13-.195.288c-.335.48-.83 1.12-1.465 1.755q-.247.248-.517.486z"/>
+                        <path d="M11.297 9.176a3.5 3.5 0 0 0-4.474-4.474l.823.823a2.5 2.5 0 0 1 2.829 2.829zm-2.943 1.299.822.822a3.5 3.5 0 0 1-4.474-4.474l.823.823a2.5 2.5 0 0 0 2.829 2.829"/>
+                        <path d="M3.35 5.47q-.27.24-.518.487A13 13 0 0 0 1.172 8l.195.288c.335.48.83 1.12 1.465 1.755C4.121 11.332 5.881 12.5 8 12.5c.716 0 1.39-.133 2.02-.36l.77.772A7 7 0 0 1 8 13.5C3 13.5 0 8 0 8s.939-1.721 2.641-3.238l.708.709zm10.296 8.884-12-12 .708-.708 12 12z"/>
+                    </svg>
+                `;
+                if (is_file_hidden(file_name)) {
+                    let vis_svg = file_tile.querySelector('.visible');
+                    vis_svg.style.display = 'none';
+                }
+                else {
+                    let vis_svg = file_tile.querySelector('.not_visible');
+                    vis_svg.style.display = 'none';
+                }
+                files_tiles.appendChild(file_tile);
+            }
+        }
+        
+
+        function start_spinner() {
+            const spinner_container = document.getElementById('spinner_container');
+            spinner_container.style.display = 'flex';
+        }
+
+        function end_spinner() {
+            const spinner_container = document.getElementById('spinner_container');
+            spinner_container.style.display = 'none';
+        }
+
     </script>
 
     <!-- chat gpt interfacing -->
     <script>
         let file_history = [];
         let undone_history = [];
-        let display_file_url = "index.html";
+        let display_file_url = localStorage.getItem('display_file_url');
+        display_file_url = display_file_url? display_file_url : "index.html";
         let ASSISTANT = 'assistant';
         let USER = 'user';
         let API_KEY = '';
@@ -265,15 +400,18 @@
             })
             .then(response => {
                 window.location.reload();
+
+                set_files_in_sidebar();
             })
             .catch(error => {
                 console.error('Error:', error);
             });
 
+
             // return non code block sections
             return user_message.join("\n");
         }
-        
+
         function getAIResponse(userMessage) {
             
             let history = localStorage.getItem('history');
@@ -283,6 +421,7 @@
                 "messages": history
             };
 
+            start_spinner();
             fetch('https://api.openai.com/v1/chat/completions', {
                 method: 'POST',
                 headers: {
@@ -299,6 +438,7 @@
 
                 appendMessage(to_user_message, ASSISTANT);
                 add_message_to_history(ai_response, to_user_message, ASSISTANT);
+                end_spinner();
             })
             .catch(error => {
                 console.error('Error:', error);
@@ -320,7 +460,6 @@
             localStorage.setItem('history', JSON.stringify(history));
         }
 
-
         function submit_chat() {
             const userMessage = promptInput.value.trim();
             if (userMessage === "") return;
@@ -328,9 +467,11 @@
             let message_parts = [chat_instructions];
             let current_files = file_history[file_history.length-1];
             for (const [file_name, contents] of current_files) {
-                message_parts.push("```" + file_name + "\n");
-                message_parts.push(contents);
-                message_parts.push("\n```\n\n");
+                if (!is_file_hidden(file_name)) {
+                    message_parts.push("```" + file_name + "\n");
+                    message_parts.push(contents);
+                    message_parts.push("\n```\n\n");
+                }
             }
             message_parts.push("USER PROMPT:\n\n");
             message_parts.push(userMessage);
@@ -345,8 +486,9 @@
             // Clear input
             promptInput.value = '';
 
-            // Get AI response (simulate)
+            // Get AI response 
             const aiResponse = getAIResponse(userMessage);
+
         }
 
         inputForm.addEventListener('click', async (e) => {
@@ -362,18 +504,23 @@
             }
         });
 
-        document.addEventListener('DOMContentLoaded', () => {
+        function get_files() {
             fetch('/get_files')
             .then(response => response.json())  // parse JSON response
             .then(data => {
                 let current_files = new Map(Object.entries(data));
                 console.log("current_files", current_files);
                 file_history.push(current_files);
+                set_files_in_sidebar();
             })
             .catch(error => {
                 console.error('Error:', error);
             });
+        }
 
+
+        document.addEventListener('DOMContentLoaded', () => {
+            get_files();
             set_display(display_file_url);
 
 
@@ -384,6 +531,7 @@
             for (message of history) {
                 appendMessage(message.user_friendly, message.role);
             }
+
         });
 
     </script>
